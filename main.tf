@@ -64,6 +64,30 @@ resource "azurerm_network_security_group" "public" {
     destination_address_prefix = "*"
   }
 
+  security_rule {
+    name                       = "AllowMongoDBFromPrivateSubnet"
+    priority                   = 130
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "27017"
+    source_address_prefixes    = var.private_subnet_address_prefix
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "DenyMongoDBOtherSources"
+    priority                   = 140
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "27017"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
   tags = local.common_tags
 }
 

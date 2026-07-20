@@ -111,3 +111,9 @@ variable "legacy_vm_identity_name" {
   type        = string
   default     = "id-vm-legacy-mongo-backup"
 }
+
+variable "mongodb_admin_username" {
+  description = "MongoDB admin username to create with root privileges once authentication is enabled."
+  type        = string
+  default     = "admin"
+}

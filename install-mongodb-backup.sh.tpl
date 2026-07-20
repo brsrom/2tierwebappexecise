@@ -1,6 +1,28 @@
 #!/bin/bash
 set -eux
 
+for i in $(seq 1 30); do
+  systemctl is-active --quiet mongod && break
+  sleep 2
+done
+
+mongo --quiet <<'EOF'
+db.getSiblingDB("admin").createUser({
+  user: "${admin_username}",
+  pwd: "${admin_password}",
+  roles: [ { role: "root", db: "admin" } ]
+})
+EOF
+
+cat >> /etc/mongod.conf <<'CONF'
+
+security:
+  authorization: enabled
+CONF
+
+systemctl restart mongod
+sleep 3
+
 curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 cat > /opt/backup-mongo.sh <<'SCRIPT'
@@ -8,7 +30,7 @@ cat > /opt/backup-mongo.sh <<'SCRIPT'
 set -euo pipefail
 DATE=$(date +%F)
 ARCHIVE="/tmp/mongodb-backup-$DATE.archive.gz"
-mongodump --archive="$ARCHIVE" --gzip
+mongodump --archive="$ARCHIVE" --gzip --username '${admin_username}' --password '${admin_password}' --authenticationDatabase admin
 az login --identity --allow-no-subscriptions
 ACCOUNT_KEY=$(az storage account keys list \
   --resource-group ${resource_group_name} \
@@ -23,7 +45,7 @@ az storage blob upload \
   --overwrite
 rm -f "$ARCHIVE"
 SCRIPT
-chmod +x /opt/backup-mongo.sh
+chmod 700 /opt/backup-mongo.sh
 
 cat > /etc/systemd/system/mongodb-backup.service <<'UNIT'
 [Unit]

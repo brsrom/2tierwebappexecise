@@ -58,6 +58,8 @@ resource "azurerm_virtual_machine_extension" "mongodb_backup" {
       storage_account_name = azurerm_storage_account.backups.name
       container_name       = azurerm_storage_container.mongodb_backups.name
       backup_schedule      = var.backup_schedule
+      admin_username       = var.mongodb_admin_username
+      admin_password       = random_password.mongodb_admin.result
     }))
   })
 
