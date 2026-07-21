@@ -1,0 +1,59 @@
+name: Build, push and deploy todoapp
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "app/todoapp/**"
+      - ".github/workflows/deploy-todoapp.yml"
+  workflow_dispatch: {}
+
+env:
+  ACR_NAME: acr2tierwizexercise2uv6ht
+  ACR_LOGIN_SERVER: acr2tierwizexercise2uv6ht.azurecr.io
+  IMAGE_NAME: todoapp
+  RESOURCE_GROUP: rg-2tier-wizexercise
+  AKS_CLUSTER: aks-2tier-wizexercise
+  NAMESPACE: todoapp
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push image to ACR
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$IMAGE_NAME:${{ github.sha }}" \
+            --image "$IMAGE_NAME:latest" \
+            app/todoapp/src
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER" --overwrite-existing
+
+      - name: Apply namespace
+        run: kubectl apply -f app/todoapp/k8s/namespace.yaml
+
+      - name: Create or update app secrets
+        run: |
+          kubectl create secret generic todoapp-secrets -n "$NAMESPACE" \
+            --from-literal=MONGODB_URI="mongodb://admin:${{ secrets.MONGODB_PASSWORD }}@10.0.1.4:27017/?authSource=admin" \
+            --from-literal=SECRET_KEY="${{ secrets.APP_SECRET_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply deployment and service
+        run: kubectl apply -f app/todoapp/k8s/deployment.yaml -f app/todoapp/k8s/service.yaml
+
+      - name: Pin deployment to this build's image
+        run: kubectl set image deployment/todoapp todoapp="$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}" -n "$NAMESPACE"
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/todoapp -n "$NAMESPACE" --timeout=180s
