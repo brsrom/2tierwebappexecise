@@ -52,3 +52,24 @@ output "legacy_vm_identity_principal_id" {
   description = "Principal (object) ID of the user-assigned identity attached to the legacy VM, granted Owner on the resource group."
   value       = azurerm_user_assigned_identity.legacy_vm_backup.principal_id
 }
+
+output "aks_cluster_name" {
+  description = "Name of the AKS cluster."
+  value       = azurerm_kubernetes_cluster.main.name
+}
+
+output "aks_get_credentials_command" {
+  description = "Command to fetch kubeconfig via az CLI and merge it into your local kubectl config."
+  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.network.name} --name ${azurerm_kubernetes_cluster.main.name}"
+}
+
+output "aks_kubeconfig_path" {
+  description = "Local path to a standalone kubeconfig file for the cluster (KUBECONFIG=<path> kubectl ...)."
+  value       = local_sensitive_file.aks_kubeconfig.filename
+}
+
+output "aks_api_server_host" {
+  description = "AKS API server endpoint (public)."
+  value       = azurerm_kubernetes_cluster.main.kube_config[0].host
+  sensitive   = true
+}

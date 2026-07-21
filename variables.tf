@@ -117,3 +117,33 @@ variable "mongodb_admin_username" {
   type        = string
   default     = "admin"
 }
+
+variable "aks_cluster_name" {
+  description = "Name of the AKS cluster deployed into the private subnet."
+  type        = string
+  default     = "aks-2tier-wizexercise"
+}
+
+variable "aks_dns_prefix" {
+  description = "DNS prefix for the AKS cluster's public API server FQDN."
+  type        = string
+  default     = "aks-2tier-wizexercise"
+}
+
+variable "aks_node_count" {
+  description = "Number of nodes in the AKS default node pool (single node, sufficient for testing)."
+  type        = number
+  default     = 1
+}
+
+variable "aks_node_vm_size" {
+  description = "VM size for AKS nodes."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "aks_identity_name" {
+  description = "Name of the user-assigned managed identity used by the AKS control plane to manage the private subnet."
+  type        = string
+  default     = "id-aks-2tier-wizexercise"
+}
