@@ -73,3 +73,13 @@ output "aks_api_server_host" {
   value       = azurerm_kubernetes_cluster.main.kube_config[0].host
   sensitive   = true
 }
+
+output "acr_login_server" {
+  description = "Login server for the container registry (docker login / docker push target)."
+  value       = azurerm_container_registry.main.login_server
+}
+
+output "acr_name" {
+  description = "Name of the container registry."
+  value       = azurerm_container_registry.main.name
+}

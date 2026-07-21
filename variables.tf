@@ -147,3 +147,15 @@ variable "aks_identity_name" {
   type        = string
   default     = "id-aks-2tier-wizexercise"
 }
+
+variable "acr_name_prefix" {
+  description = "Prefix for the globally-unique Azure Container Registry name (a random suffix is appended)."
+  type        = string
+  default     = "acr2tierwizexercise"
+}
+
+variable "acr_sku" {
+  description = "SKU for the Azure Container Registry."
+  type        = string
+  default     = "Basic"
+}
