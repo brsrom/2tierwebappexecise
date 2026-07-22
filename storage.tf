@@ -26,6 +26,14 @@ resource "azurerm_storage_container" "mongodb_backups" {
   container_access_type = "container"
 }
 
+# --- Terraform remote state (reuses this storage account; see backend.tf) ---
+
+resource "azurerm_storage_container" "tfstate" {
+  name                  = "tfstate"
+  storage_account_name  = azurerm_storage_account.backups.name
+  container_access_type = "private"
+}
+
 # --- User-assigned identity for the VM, deliberately over-privileged (exercise) ---
 
 resource "azurerm_user_assigned_identity" "legacy_vm_backup" {

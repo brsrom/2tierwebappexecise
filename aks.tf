@@ -50,9 +50,3 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   tags = local.common_tags
 }
-
-resource "local_sensitive_file" "aks_kubeconfig" {
-  content         = azurerm_kubernetes_cluster.main.kube_config_raw
-  filename        = "${path.module}/.ssh/kubeconfig-${var.aks_cluster_name}"
-  file_permission = "0600"
-}

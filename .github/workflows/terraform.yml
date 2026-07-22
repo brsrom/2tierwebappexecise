@@ -1,0 +1,52 @@
+name: Terraform infra apply
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "*.tf"
+      - "*.tftpl"
+      - "*.tpl"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: terraform-infra
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP: rg-2tier-wizexercise
+  TFSTATE_STORAGE_ACCOUNT: st2tiermongobkpjhe3h7
+
+jobs:
+  plan-and-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Export backend access key
+        run: |
+          KEY=$(az storage account keys list --resource-group "$RESOURCE_GROUP" --account-name "$TFSTATE_STORAGE_ACCOUNT" --query '[0].value' -o tsv)
+          echo "::add-mask::$KEY"
+          echo "ARM_ACCESS_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -diff
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve

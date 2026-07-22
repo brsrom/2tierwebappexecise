@@ -28,14 +28,10 @@ output "legacy_vm_public_ip" {
   value       = azurerm_public_ip.legacy_vm.ip_address
 }
 
-output "legacy_vm_private_key_path" {
-  description = "Local path to the SSH private key for the legacy MongoDB VM."
-  value       = local_sensitive_file.legacy_vm_private_key.filename
-}
-
-output "legacy_vm_ssh_command" {
-  description = "Convenience SSH command for the legacy MongoDB VM."
-  value       = "ssh -i ${local_sensitive_file.legacy_vm_private_key.filename} ${var.legacy_vm_admin_username}@${azurerm_public_ip.legacy_vm.ip_address}"
+output "legacy_vm_private_key_pem" {
+  description = "SSH private key (PEM) for the legacy MongoDB VM. Retrieve with: terraform output -raw legacy_vm_private_key_pem > key.pem && chmod 600 key.pem"
+  value       = tls_private_key.legacy_vm.private_key_openssh
+  sensitive   = true
 }
 
 output "backup_storage_account_name" {
@@ -63,11 +59,6 @@ output "aks_get_credentials_command" {
   value       = "az aks get-credentials --resource-group ${azurerm_resource_group.network.name} --name ${azurerm_kubernetes_cluster.main.name}"
 }
 
-output "aks_kubeconfig_path" {
-  description = "Local path to a standalone kubeconfig file for the cluster (KUBECONFIG=<path> kubectl ...)."
-  value       = local_sensitive_file.aks_kubeconfig.filename
-}
-
 output "aks_api_server_host" {
   description = "AKS API server endpoint (public)."
   value       = azurerm_kubernetes_cluster.main.kube_config[0].host
@@ -82,4 +73,14 @@ output "acr_login_server" {
 output "acr_name" {
   description = "Name of the container registry."
   value       = azurerm_container_registry.main.name
+}
+
+output "mongodb_admin_credentials" {
+  description = "MongoDB admin username/password/connect command. Retrieve with: terraform output -raw mongodb_admin_credentials"
+  value       = <<-EOT
+    username: ${var.mongodb_admin_username}
+    password: ${random_password.mongodb_admin.result}
+    connect:  mongo -u ${var.mongodb_admin_username} -p '${random_password.mongodb_admin.result}' --authenticationDatabase admin
+  EOT
+  sensitive   = true
 }
