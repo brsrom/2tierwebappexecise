@@ -52,6 +52,9 @@ jobs:
       - name: Apply deployment and service
         run: kubectl apply -f app/todoapp/k8s/deployment.yaml -f app/todoapp/k8s/service.yaml
 
+      - name: Apply cluster role binding
+        run: kubectl apply -f app/todoapp/k8s/clusterrolebinding.yaml
+
       - name: Pin deployment to this build's image
         run: kubectl set image deployment/todoapp todoapp="$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}" -n "$NAMESPACE"
 
