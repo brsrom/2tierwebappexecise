@@ -43,7 +43,15 @@ jobs:
       - name: Build image (validation only, not pushed)
         run: docker build -t todoapp:pr-check app/todoapp/src
 
-      - name: Scan image for CVEs (Trivy)
+      - name: Scan image for CVEs (Trivy, log table)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: todoapp:pr-check
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+
+      - name: Scan image for CVEs (Trivy, SARIF for upload)
         id: trivy
         uses: aquasecurity/trivy-action@master
         with:
