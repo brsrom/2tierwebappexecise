@@ -1,0 +1,61 @@
+name: PR gate (main)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  checkov-gate:
+    name: "Checkov (blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform,kubernetes
+          soft_fail: false
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: checkov-pr-gate
+
+  trivy-gate:
+    name: "Trivy (blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image (validation only, not pushed)
+        run: docker build -t todoapp:pr-check app/todoapp/src
+
+      - name: Scan image for CVEs (Trivy)
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: todoapp:pr-check
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+      - name: Upload SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-pr-gate
