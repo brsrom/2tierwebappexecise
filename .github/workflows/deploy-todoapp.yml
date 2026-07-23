@@ -16,6 +16,10 @@ env:
   AKS_CLUSTER: aks-2tier-wizexercise
   NAMESPACE: todoapp
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
@@ -28,13 +32,35 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and push image to ACR
+      - name: Build image locally
         run: |
-          az acr build \
-            --registry "$ACR_NAME" \
-            --image "$IMAGE_NAME:${{ github.sha }}" \
-            --image "$IMAGE_NAME:latest" \
+          az acr login --name "$ACR_NAME"
+          docker build \
+            -t "$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}" \
+            -t "$ACR_LOGIN_SERVER/$IMAGE_NAME:latest" \
             app/todoapp/src
+
+      - name: Scan image for CVEs (Trivy)
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+      - name: Push image to ACR
+        run: |
+          docker push "$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}"
+          docker push "$ACR_LOGIN_SERVER/$IMAGE_NAME:latest"
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER" --overwrite-existing

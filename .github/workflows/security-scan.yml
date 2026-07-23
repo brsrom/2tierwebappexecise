@@ -1,0 +1,40 @@
+name: Security scan (Checkov)
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "*.tf"
+      - "*.tftpl"
+      - "*.tpl"
+      - "app/todoapp/k8s/**"
+      - ".github/workflows/security-scan.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform,kubernetes
+          soft_fail: true
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: checkov
