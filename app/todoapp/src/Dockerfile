@@ -12,7 +12,7 @@ FROM alpine:3.17.0 as release
 WORKDIR /app
 COPY --from=build  /go/src/tasky/tasky .
 COPY --from=build  /go/src/tasky/assets ./assets
-RUN echo "Bessonov Roman 21.07.2026" > /app/wizexercise.txt
+RUN echo "Bessonov Roman 29.07.2026" > /app/wizexercise.txt
 EXPOSE 8080
 ENTRYPOINT ["/app/tasky"]
 
