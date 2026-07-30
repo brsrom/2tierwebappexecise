@@ -70,6 +70,24 @@ jobs:
           docker push "$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}"
           docker push "$ACR_LOGIN_SERVER/$IMAGE_NAME:latest"
 
+      - name: Generate SBOM (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: cyclonedx
+          output: sbom.cdx.json
+
+      - name: Install ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Attach SBOM to image in ACR
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}" | cut -d'@' -f2)
+          oras attach \
+            --artifact-type application/vnd.cyclonedx+json \
+            "$ACR_LOGIN_SERVER/$IMAGE_NAME@$DIGEST" \
+            sbom.cdx.json:application/vnd.cyclonedx+json
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER" --overwrite-existing
 
