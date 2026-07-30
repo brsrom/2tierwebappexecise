@@ -21,6 +21,8 @@ resource "azurerm_kubernetes_cluster" "main" {
   dns_prefix          = var.aks_dns_prefix
   oidc_issuer_enabled = true
 
+  azure_policy_enabled = true
+
   default_node_pool {
     name           = "default"
     node_count     = var.aks_node_count
