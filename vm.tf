@@ -44,7 +44,10 @@ resource "azurerm_linux_virtual_machine" "legacy_vm" {
   }
 
   identity {
-    type         = "UserAssigned"
+    # SystemAssigned is added out-of-band by Azure Policy/Guest Configuration
+    # remediation (Defender CSPM) shortly after the VM is created; imported
+    # here so it stops showing as drift on every plan.
+    type         = "SystemAssigned, UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.legacy_vm_backup.id]
   }
 
