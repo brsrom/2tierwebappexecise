@@ -25,12 +25,12 @@ resource "azurerm_resource_group_policy_assignment" "block_public_blob_access" {
 #     new public storage account. Verified 2026-07-31: fails immediately with
 #     RequestDisallowedByPolicy, citing this exact policy assignment.
 #
-#resource "azurerm_storage_account" "policy_test_public" {
-#  name                             = "sttestpolicydeny"
-#  resource_group_name              = azurerm_resource_group.network.name
-#  location                         = azurerm_resource_group.network.location
-#  account_tier                     = "Standard"
-#  account_replication_type         = "LRS"
-#  allow_nested_items_to_be_public  = true
-#  public_network_access_enabled    = true
-#}
+resource "azurerm_storage_account" "policy_test_public" {
+  name                             = "sttestpolicydeny"
+  resource_group_name              = azurerm_resource_group.network.name
+  location                         = azurerm_resource_group.network.location
+  account_tier                     = "Standard"
+  account_replication_type         = "LRS"
+  allow_nested_items_to_be_public  = true
+  public_network_access_enabled    = true
+}
