@@ -62,12 +62,13 @@ resource "azurerm_virtual_machine_extension" "mongodb_backup" {
 
   settings = jsonencode({
     script = base64encode(templatefile("${path.module}/install-mongodb-backup.sh.tpl", {
-      resource_group_name  = azurerm_resource_group.network.name
-      storage_account_name = azurerm_storage_account.backups.name
-      container_name       = azurerm_storage_container.mongodb_backups.name
-      backup_schedule      = var.backup_schedule
-      admin_username       = var.mongodb_admin_username
-      admin_password       = random_password.mongodb_admin.result
+      resource_group_name          = azurerm_resource_group.network.name
+      storage_account_name         = azurerm_storage_account.backups.name
+      container_name               = azurerm_storage_container.mongodb_backups.name
+      backup_schedule              = var.backup_schedule
+      admin_username               = var.mongodb_admin_username
+      admin_password               = random_password.mongodb_admin.result
+      legacy_vm_identity_client_id = azurerm_user_assigned_identity.legacy_vm_backup.client_id
     }))
   })
 

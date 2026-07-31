@@ -6,7 +6,8 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-mongo --quiet <<'EOF'
+if ! grep -q "authorization: enabled" /etc/mongod.conf; then
+  mongo --quiet <<'EOF'
 db.getSiblingDB("admin").createUser({
   user: "${admin_username}",
   pwd: "${admin_password}",
@@ -14,16 +15,19 @@ db.getSiblingDB("admin").createUser({
 })
 EOF
 
-cat >> /etc/mongod.conf <<'CONF'
+  cat >> /etc/mongod.conf <<'CONF'
 
 security:
   authorization: enabled
 CONF
 
-systemctl restart mongod
-sleep 3
+  systemctl restart mongod
+  sleep 3
+fi
 
-curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+if ! command -v az &> /dev/null; then
+  curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+fi
 
 cat > /opt/backup-mongo.sh <<'SCRIPT'
 #!/bin/bash
@@ -31,7 +35,7 @@ set -euo pipefail
 DATE=$(date +%F)
 ARCHIVE="/tmp/mongodb-backup-$DATE.archive.gz"
 mongodump --archive="$ARCHIVE" --gzip --username '${admin_username}' --password '${admin_password}' --authenticationDatabase admin
-az login --identity --allow-no-subscriptions
+az login --identity --username ${legacy_vm_identity_client_id} --allow-no-subscriptions
 ACCOUNT_KEY=$(az storage account keys list \
   --resource-group ${resource_group_name} \
   --account-name ${storage_account_name} \
